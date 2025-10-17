@@ -1,21 +1,40 @@
 # Okta Group Tools
 
-A suite of CLI tools for managing Okta group memberships and group rules.
+**CLI automation for Okta access management that solves problems the GUI can't.**
 
-## Tools
+## Why This Exists
 
-### Okta Membership Wizard
-Interactive CLI for managing Okta access control with three workflows:
-- **Group Rule Assignments** - Modify dynamic group rules (handles immutable rules via recreation)
-- **Direct User Group Assignments** - Grant/revoke temporary access
-- **Manifest-based Access Revocation** - Safely reset user permissions to previous state
+The Okta GUI is fine for one-off changes. This tool exists for everything else:
 
-### Features
-- Automatic backups before rule modifications
-- Manifest generation for all access changes (enables rollback)
-- Automatic rollback on failures
-- Rate limit handling
-- Bulk operations from text files
+### Problems It Solves
+
+**1. Immutable Rules Are Locked**
+- GUI: "This rule cannot be modified" → You're stuck
+- This tool: Automatically recreates the rule with your changes, handles cutover, rolls back on failure
+
+**2. No Undo Button**
+- GUI: Made a mistake? Manually reverse 50 group assignments
+- This tool: Every change generates a manifest. One command restores previous state.
+
+**3. Bulk Operations Are Painful**
+- GUI: Adding 30 groups to a rule = 30 clicks
+- This tool: Select from checklist or load from text file
+
+**4. No Audit Trail**
+- GUI: Who had access before this change? Good luck.
+- This tool: Timestamped manifests show exactly what changed, when, and by whom
+
+**5. Temporary Access Is Manual**
+- GUI: Remember to remove that contractor's access in 2 weeks
+- This tool: Grant access → generates manifest → revoke using manifest when done
+
+## What It Does
+
+Three workflows for different access patterns:
+
+**Group Rule Management** - Modify dynamic rules (even locked ones), bulk group assignments  
+**Direct User Access** - Grant/revoke temporary access with automatic manifest generation  
+**Access Reset** - Restore user to previous state using manifest (perfect for incidents/contractors)
 
 ## Setup
 
