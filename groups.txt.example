@@ -1,3 +1,7 @@
+# Format: One group name per line (exact match required)
+# Lines starting with # are ignored by the trim/filter logic
+# Empty lines are automatically filtered out
+
 Engineering-Team-Alpha
 Engineering-Team-Beta
 DevOps-Production-Access

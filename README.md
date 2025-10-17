@@ -63,6 +63,18 @@ OKTA_API_TOKEN=your-api-token
 node okta_membership_wizard.js
 ```
 
+### Bulk Loading Groups from File
+
+When prompted to add groups, you can select "From a text file" and provide a file with one group name per line:
+
+```
+Engineering-Team-Alpha
+DevOps-Production-Access
+Security-Audit-ReadOnly
+```
+
+See `groups.txt.example` for reference. Group names must match exactly as they appear in Okta.
+
 ## Project Structure
 
 ```
