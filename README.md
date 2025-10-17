@@ -151,7 +151,7 @@ When Okta locks a rule (makes it immutable), the GUI shows an error. This tool h
 4. User reviews staged rule
 5. Cutover: Deactivate old → Activate new
 6. If cutover fails: Automatic rollback (reactivate old rule)
-7. Cleanup: Delete old rule, rename new rule
+7. Cleanup: Rename new rule → Delete old rule
 ```
 
 This multi-step process ensures zero downtime and safe rollback if anything goes wrong.

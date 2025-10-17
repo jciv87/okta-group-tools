@@ -589,10 +589,10 @@ async function runRecreateWorkflow(oldRule, newGroupIds) {
     stopSpinner('Successfully created new rule (currently INACTIVE).');
     console.log(formatRuleForDisplay(newRule));
 
-    console.log(chalk.yellow(`\nThis rule will be renamed to "${finalName}" after cleanup.`));
+    console.log(chalk.yellow(`\nThis rule will be renamed to "${finalName}" before activation.`));
     const { confirmCutover } = await inquirer.prompt([{
         type: 'confirm', name: 'confirmCutover',
-        message: 'Review the staged rule above. Proceed with cutover?',
+        message: 'Review the staged rule above. Proceed with rename and cutover?',
         default: true
     }]);
 
@@ -601,6 +601,30 @@ async function runRecreateWorkflow(oldRule, newGroupIds) {
         await makeApiCall('delete', `https://${config.connection.domain}/api/v1/groups/rules/${newRule.id}`);
         stopSpinner('Temporary rule deleted. No changes were made.');
         return;
+    }
+
+    // Rename BEFORE activation (can't rename active rules)
+    showSectionHeader('Re-create: Renaming New Rule', '7a');
+    try {
+        showSpinner(`Renaming rule to "${finalName}"...`);
+        const getRuleResponse = await makeApiCall('get', `https://${config.connection.domain}/api/v1/groups/rules/${newRule.id}`);
+        const ruleState = getRuleResponse.data;
+        const renamePayload = { ...ruleState, name: finalName };
+        delete renamePayload.id;
+        delete renamePayload.created;
+        delete renamePayload.lastUpdated;
+        
+        await makeApiCall('put', `https://${config.connection.domain}/api/v1/groups/rules/${newRule.id}`, renamePayload);
+        stopSpinner('Rule renamed successfully.');
+        logger.info('Rule renamed before activation', { newRuleId: newRule.id, oldName: tempName, newName: finalName });
+    } catch(e) {
+        logger.error("Failed to rename rule before activation.", { newRuleId: newRule.id, error: e.message });
+        stopSpinner('Rename failed. Aborting cutover.', true);
+        
+        showSpinner('Cleaning up temporary rule...');
+        await makeApiCall('delete', `https://${config.connection.domain}/api/v1/groups/rules/${newRule.id}`);
+        stopSpinner('Temporary rule deleted.');
+        throw new Error('Rule rename failed. No changes were made to production.');
     }
 
     showSectionHeader('Re-create: Performing Cutover', '7b');
@@ -632,7 +656,7 @@ async function runRecreateWorkflow(oldRule, newGroupIds) {
     showSectionHeader('Re-create: Cleaning Up', '7c');
     const { confirmCleanup } = await inquirer.prompt([{
         type: 'confirm', name: 'confirmCleanup',
-        message: 'Cutover successful. Proceed with cleanup (delete old rule, rename new one)?',
+        message: 'Cutover successful. Delete the old rule?',
         default: true
     }]);
 
@@ -645,24 +669,8 @@ async function runRecreateWorkflow(oldRule, newGroupIds) {
             logger.warn("Failed to delete old rule during cleanup.", { oldRuleId, error: e.message });
             stopSpinner('Could not delete old rule. Please remove it manually.', true);
         }
-        try {
-            showSpinner(`Renaming new rule to "${finalName}"...`);
-            const getNewRuleResponse = await makeApiCall('get', `https://${config.connection.domain}/api/v1/groups/rules/${newRule.id}`);
-            const newRuleState = getNewRuleResponse.data;
-            const finalPayload = { ...newRuleState, name: finalName };
-            delete finalPayload.id;
-            delete finalPayload.created;
-            delete finalPayload.lastUpdated;
-
-            await makeApiCall('put', `https://${config.connection.domain}/api/v1/groups/rules/${newRule.id}`, finalPayload);
-            stopSpinner('New rule has been renamed.');
-            logger.info('Rule rename successful', { newRuleId: newRule.id, oldName: tempName, newName: finalName });
-        } catch(e) {
-            logger.warn("Failed to rename new rule during cleanup.", { newRuleId: newRule.id, error: e.message });
-            stopSpinner(`Could not rename new rule. Please rename it manually.`, true);
-        }
     } else {
-        console.log(chalk.yellow('Cleanup skipped. Please manually delete the old rule and rename the new one.'));
+        console.log(chalk.yellow('Cleanup skipped. Please manually delete the old rule.'));
     }
 
     console.log(chalk.green.bold('\n✓ Re-creation process completed successfully!'));
