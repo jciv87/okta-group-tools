@@ -265,6 +265,49 @@ This tool manages production access control. Multiple safety mechanisms are buil
 - Keep manifests for audit trail and rollback capability
 - Test with non-critical users/groups first
 
+## Troubleshooting
+
+### "Authentication failed" or 401 errors
+- Verify `OKTA_API_TOKEN` is correct in `.env`
+- Check token hasn't expired
+- Ensure token has admin permissions
+
+### "Permission denied" or 403 errors
+- API token needs appropriate scopes (Group Admin, User Admin)
+- Check Okta admin role assignments
+
+### "Cannot find module" errors
+- Run `npm install` to install dependencies
+- Check Node version: `node --version` (requires >= 18)
+
+### Rate limit errors (429)
+- Tool automatically retries after rate limit window
+- If persistent, reduce concurrent operations
+
+### Manifest not found
+- Check `manifests/` directory exists
+- Verify file path is correct
+- Use manifest browser in reset workflow
+
+### Rule update fails with "immutable" error
+- This is expected for locked rules
+- Tool will offer to recreate the rule automatically
+- Review staged rule before confirming cutover
+
+For more issues, check [GitHub Issues](https://github.com/jciv87/okta-group-tools/issues) or open a new one.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on reporting bugs, suggesting features, and submitting code.
+
+## Security
+
+See [SECURITY.md](SECURITY.md) for security best practices and how to report vulnerabilities.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
+
 ## Project Structure
 
 ```
