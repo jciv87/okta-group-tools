@@ -30,11 +30,12 @@ The Okta GUI is fine for one-off changes. This tool exists for everything else:
 
 ## What It Does
 
-Three workflows for different access patterns:
+Four tools for different access patterns:
 
 **Group Rule Management** - Modify dynamic rules (even locked ones), bulk group assignments  
 **Direct User Access** - Grant/revoke temporary access with automatic manifest generation  
-**Access Reset** - Restore user to previous state using manifest (perfect for incidents/contractors)
+**Access Reset** - Restore user to previous state using manifest (perfect for incidents/contractors)  
+**Bulk Profile Updates** - Update custom profile attributes for multiple users at once
 
 ## Setup
 
@@ -59,8 +60,14 @@ OKTA_API_TOKEN=your-api-token
 
 ## Usage
 
+**Interactive Wizard:**
 ```bash
 node okta_membership_wizard.js
+```
+
+**Bulk Profile Updates:**
+```bash
+./bulk_update_user_profile.sh
 ```
 
 ### Bulk Loading Groups from File
