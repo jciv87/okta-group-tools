@@ -57,6 +57,12 @@ let logger = null;
 function showWelcomeBanner() {
     console.log(chalk.cyan(figlet.textSync('Okta Membership Wizard', { font: 'Standard' })));
     console.log(chalk.cyan('A tool for managing Group Rules and User Group Memberships.\n'));
+    
+    // Safety warning
+    console.log(chalk.yellow.bold('⚠️  IMPORTANT: This tool modifies production access control'));
+    console.log(chalk.gray('   • All changes are logged and backed up'));
+    console.log(chalk.gray('   • Manifests enable rollback of user access changes'));
+    console.log(chalk.gray('   • You will review changes before they are applied\n'));
 }
 
 function showSpinner(message) {
@@ -261,14 +267,22 @@ async function runUserWorkflow() {
 
         showSectionHeader("Review and Confirm Changes", 5);
         const groupNames = await getGroupNamesByIds([...groupsToAdd, ...groupsToRemove]);
+        
+        console.log(chalk.yellow.bold('\n⚠️  IMPACT SUMMARY'));
+        console.log(chalk.gray(`User: ${user.profile.login} (${user.profile.firstName} ${user.profile.lastName})`));
+        
         if (groupsToRemove.length > 0) {
             console.log(chalk.red.bold(`\nWill REMOVE user from ${groupsToRemove.length} groups:`));
             groupsToRemove.forEach(g => console.log(chalk.red(` - ${groupNames[g] || g}`)));
+            console.log(chalk.gray('   → User will LOSE access granted by these groups'));
         }
         if (groupsToAdd.length > 0) {
             console.log(chalk.green.bold(`\nWill ADD user to ${groupsToAdd.length} groups:`));
             groupsToAdd.forEach(g => console.log(chalk.green(` - ${groupNames[g] || g}`)));
+            console.log(chalk.gray('   → User will GAIN access granted by these groups'));
         }
+        
+        console.log(chalk.cyan.bold('\n📋 A manifest will be generated for rollback if needed'));
         
         const { confirm } = await inquirer.prompt([{ type: 'confirm', name: 'confirm', message: '\nDo you want to apply these changes?', default: true }]);
         if (!confirm) {
@@ -322,12 +336,14 @@ async function runResetWorkflow() {
         const { added, removed } = actions;
 
         showSectionHeader("Review Access Reset Plan", 3);
+        console.log(chalk.yellow.bold('⚠️  ACCESS RESET OPERATION'));
         console.log(chalk.yellow(`This will restore user ${chalk.bold(user.login)} to the state before ${new Date(generatedAt).toLocaleString()}`));
+        console.log(chalk.gray('This reverses the changes made in that operation.\n'));
         
         const groupNames = await getGroupNamesByIds([...added, ...removed]);
 
         if (added.length > 0) {
-            console.log(chalk.red.bold(`\nWill REMOVE user from ${added.length} groups:`));
+            console.log(chalk.red.bold(`Will REMOVE user from ${added.length} groups:`));
             added.forEach(g => console.log(chalk.red(` - ${groupNames[g] || g}`)));
         }
         if (removed.length > 0) {
@@ -431,6 +447,20 @@ async function runRuleWorkflow() {
         groupsToRemove.forEach(id => finalGroupIdSet.delete(id));
         groupsToAdd.forEach(id => finalGroupIdSet.add(id));
         const finalGroupIds = Array.from(finalGroupIdSet);
+        
+        // Impact summary
+        console.log(chalk.yellow.bold('\n⚠️  RULE MODIFICATION IMPACT'));
+        console.log(chalk.gray(`Rule: ${originalRule.name}`));
+        console.log(chalk.gray(`This rule dynamically assigns groups based on: ${originalRule.conditions.expression.value}`));
+        console.log(chalk.gray(`Current assignments: ${currentGroupIds.length} groups`));
+        console.log(chalk.gray(`After change: ${finalGroupIds.length} groups`));
+        if (groupsToRemove.length > 0) {
+            console.log(chalk.red(`   → ${groupsToRemove.length} groups will be REMOVED from this rule`));
+        }
+        if (groupsToAdd.length > 0) {
+            console.log(chalk.green(`   → ${groupsToAdd.length} groups will be ADDED to this rule`));
+        }
+        console.log(chalk.yellow.bold('\n⚠️  Users matching this rule will have their group memberships updated automatically\n'));
         
         const updatedRulePayload = { ...originalRule, actions: { assignUserToGroups: { groupIds: finalGroupIds } } };
         delete updatedRulePayload.id;

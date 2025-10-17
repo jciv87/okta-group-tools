@@ -24,6 +24,10 @@ fi
 # --- USER INPUT ---
 echo "=== Bulk User Profile Updater ==="
 echo ""
+echo "⚠️  WARNING: This modifies user profile attributes in production"
+echo "   • Changes are immediate and affect user access/attributes"
+echo "   • Ensure you have the correct user list before proceeding"
+echo ""
 echo "This script updates custom profile attributes for multiple users."
 echo "You can provide user IDs or emails."
 echo ""
@@ -52,9 +56,17 @@ fi
 
 # --- CONFIRMATION ---
 echo ""
-echo "Will update ${#users[@]} users with: $ATTRIBUTE_NAME = $ATTRIBUTE_VALUE"
+echo "=== IMPACT SUMMARY ==="
+echo "Attribute: $ATTRIBUTE_NAME"
+echo "New Value: $ATTRIBUTE_VALUE"
+echo "Affected Users: ${#users[@]}"
 echo ""
-read -p "Proceed? (yes/no): " CONFIRM
+echo "Users to be updated:"
+for user in "${users[@]}"; do
+    echo "  - $user"
+done
+echo ""
+read -p "⚠️  Proceed with updating ${#users[@]} users? (yes/no): " CONFIRM
 if [ "$CONFIRM" != "yes" ] && [ "$CONFIRM" != "y" ]; then
     echo "Operation cancelled."
     exit 0

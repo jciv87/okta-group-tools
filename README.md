@@ -97,6 +97,31 @@ Security-Audit-ReadOnly
 
 See `groups.txt.example` for reference. Group names must match exactly as they appear in Okta.
 
+## Safety Features
+
+This tool manages production access control. Multiple safety mechanisms are built in:
+
+**Before Execution:**
+- Preflight checks validate configuration
+- All changes are previewed with impact summaries
+- Explicit confirmation required before applying changes
+
+**During Execution:**
+- Automatic backups created before rule modifications
+- Manifests generated for all user access changes
+- Progress tracking with detailed logging
+
+**After Execution:**
+- Timestamped logs in `logs/` directory
+- Rule backups in `backups/` directory
+- Access manifests in `manifests/` directory (enable rollback)
+
+**Best Practices:**
+- Run `npm run preflight` before first use
+- Review impact summaries carefully before confirming
+- Keep manifests for audit trail and rollback capability
+- Test with non-critical users/groups first
+
 ## Project Structure
 
 ```
