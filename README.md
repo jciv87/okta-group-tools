@@ -2,6 +2,8 @@
 
 **CLI automation for Okta access management that solves problems the GUI can't.**
 
+> **Note:** I built this for my own work managing Okta at scale. Sharing it in case others find it useful. Use at your own risk and test thoroughly in non-production environments first.
+
 ## Why This Exists
 
 The Okta GUI is fine for one-off changes. This tool exists for everything else:

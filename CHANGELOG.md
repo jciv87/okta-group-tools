@@ -1,45 +1,28 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+## [1.0.0] - 2025-10-17
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+Initial public release. I built this for my own work and decided to share it.
 
-## [7.0.4] - 2025-10-17
+**What it does:**
+- Manages Okta group rules (including immutable ones)
+- Grants/revokes user access with manifest generation
+- Resets user access to previous state
+- Bulk updates user profile attributes
 
-### Added
-- Preflight check script for setup validation
-- Manifest browser in reset workflow (no more typing paths)
-- Bulk profile updater queries Okta schema and categorizes attributes
-- Comprehensive safety warnings and impact summaries
-- UX analysis documentation in `docs/` folder
-
-### Fixed
-- Step numbering consistency across all workflows
-- Context-aware language ("remove from rule" vs "remove from user")
-- Immutable rule recreation now renames before activation (can't rename active rules)
-
-### Changed
-- Bulk profile updater now shows both standard and custom attributes
-- Improved error messages and user guidance
-
-## [7.0.0] - 2025-10-17
-
-### Added
-- Initial public release
-- Group rule management with immutable rule handling
-- Direct user access grants/revocations
-- Manifest-based access reset
-- Bulk profile attribute updates
-- Automatic backups and manifest generation
-- Comprehensive logging with Winston
-
-### Security
-- All operations require explicit confirmation
+**Safety features:**
 - Impact summaries before changes
-- Automatic rollback on failures
-- Audit trail via manifests and logs
+- Explicit confirmation required
+- Automatic backups and manifests
+- Detailed logging
 
-## Future Releases
+**Known issues:**
+- No automated tests yet
+- Limited error recovery in edge cases
+- Documentation could be better
 
-See [UX_IMPROVEMENTS.md](docs/UX_IMPROVEMENTS.md) for planned enhancements.
+Use at your own risk. Test in non-production first.
+
+---
+
+See [docs/UX_IMPROVEMENTS.md](docs/UX_IMPROVEMENTS.md) for ideas I'm considering.

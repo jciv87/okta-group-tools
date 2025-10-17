@@ -1,6 +1,6 @@
 {
   "name": "okta-group-tools",
-  "version": "7.0.0",
+  "version": "1.0.0",
   "description": "CLI automation for Okta access management - group rules, user memberships, and bulk profile updates",
   "main": "okta_membership_wizard.js",
   "type": "commonjs",

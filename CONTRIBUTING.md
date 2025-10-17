@@ -1,54 +1,41 @@
-# Contributing to Okta Group Tools
+# Contributing
 
-Thank you for considering contributing! This tool is built for the Okta admin community, and we welcome improvements.
+I built this tool for my own use and decided to share it. If you find it useful and want to contribute, great! But please understand:
 
-## How to Contribute
+- **I'm a solo maintainer** - Response times may vary
+- **No formal process** - Just open an issue or PR
+- **Use at your own risk** - Test thoroughly before using in production
 
-### Reporting Bugs
-1. Check existing [issues](https://github.com/jciv87/okta-group-tools/issues) first
-2. Use the bug report template
-3. Include:
-   - Your environment (OS, Node version)
-   - Steps to reproduce
-   - Expected vs actual behavior
-   - Relevant logs (redact sensitive info)
+## Found a Bug?
 
-### Suggesting Features
-1. Open an issue with the feature request template
-2. Describe the problem it solves
-3. Explain how it fits the tool's philosophy (safety, auditability, bulk operations)
+Open an issue with:
+- What you were trying to do
+- What happened instead
+- Your environment (OS, Node version)
+- Relevant logs (redact sensitive info)
 
-### Submitting Code
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/your-feature`)
-3. Make your changes
-4. Test thoroughly (especially with safety mechanisms)
-5. Update documentation (README, inline comments)
-6. Commit with clear messages
-7. Push and open a pull request
+## Have an Idea?
 
-## Development Guidelines
+Open an issue describing:
+- The problem you're trying to solve
+- How you'd like it to work
+- Why it fits this tool's purpose (bulk operations, safety, auditability)
 
-### Code Style
-- Use clear variable names
-- Add comments for complex logic
-- Follow existing patterns (inquirer prompts, chalk colors, ora spinners)
-- Keep functions focused and small
+## Want to Submit Code?
 
-### Safety First
-This tool manages production access. Every change must:
-- Show impact summaries before execution
-- Require explicit confirmation
-- Generate logs/backups/manifests
-- Handle errors gracefully
-- Support rollback where possible
+1. Fork the repo
+2. Make your changes
+3. Test it thoroughly (this manages production access!)
+4. Open a PR with a clear description
 
-### Testing
-Before submitting:
-- Run `npm run preflight` to validate setup
-- Test with non-production Okta org if possible
-- Verify error handling (network failures, API errors, invalid input)
-- Check that logs/backups/manifests are generated correctly
+I may be slow to review, but I appreciate the help.
 
-## Questions?
-Open an issue or discussion. We're here to help!
+## Philosophy
+
+This tool exists because the Okta GUI makes certain operations painful:
+- Bulk changes
+- Immutable rules
+- No undo button
+- No audit trail
+
+Keep that focus when contributing. Safety first, always.

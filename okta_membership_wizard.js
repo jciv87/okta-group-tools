@@ -15,7 +15,7 @@
  * - bulk_load.js: Bulk group operations
  *
  * Author: Created for Okta administrators
- * Version: 7.0.4
+ * Version: 1.0.0
  * License: MIT
  */
 

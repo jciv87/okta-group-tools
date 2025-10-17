@@ -1,56 +1,55 @@
-# Security Policy
+# Security
 
-## Reporting Security Issues
+## Reporting Issues
 
-**Please do not report security vulnerabilities through public GitHub issues.**
+If you find a security vulnerability, please **don't open a public issue**. Instead:
+- Use GitHub's private vulnerability reporting, or
+- Email me directly (check my GitHub profile)
 
-If you discover a security vulnerability, please email the maintainers directly or use GitHub's private vulnerability reporting feature.
+I'll do my best to respond promptly, but I'm a solo maintainer with a day job.
 
-Include:
-- Description of the vulnerability
-- Steps to reproduce
-- Potential impact
-- Suggested fix (if any)
+## Use at Your Own Risk
 
-We will respond within 48 hours and work with you to address the issue.
+This tool manages production access control. You are responsible for:
+- Testing in non-production environments first
+- Understanding what each operation does
+- Securing your API tokens
+- Following your organization's security policies
 
-## Security Best Practices
+## Best Practices
 
-### API Token Management
-- **Never commit** `.env` files or API tokens to git
-- Use environment variables or secure secret management
-- Rotate tokens regularly
+**Protect Your API Token:**
+- Never commit `.env` files
 - Use tokens with minimum required permissions
+- Rotate tokens regularly
 
-### Access Control
-- Review impact summaries carefully before confirming changes
+**Before Running:**
+- Run `npm run preflight` to validate setup
+- Review impact summaries carefully
+- Have a rollback plan
+
+**After Running:**
+- Review logs for unexpected behavior
 - Keep manifests for audit trail
-- Test with non-production orgs first
-- Limit who has access to run these tools
+- Monitor Okta system logs
 
-### Data Protection
-- Logs may contain user IDs and group names (not credentials)
-- Manifests contain user/group mappings
-- Backups contain rule configurations
-- Store these files securely and follow your org's data retention policies
+## What This Tool Does
 
-## Supported Versions
+- Reads/writes Okta group rules
+- Adds/removes users from groups
+- Updates user profile attributes
+- Creates backups and manifests
+- Logs all operations
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 7.x     | :white_check_mark: |
-| < 7.0   | :x:                |
+All operations require explicit confirmation. But mistakes can still happen. Test thoroughly.
 
-## Known Security Considerations
+## Known Limitations
 
-1. **API Token Scope**: This tool requires admin-level Okta API access. Tokens should be protected accordingly.
-2. **Audit Logging**: All operations are logged to `logs/okta-wizard.log`. Review regularly.
-3. **Manifest Storage**: Manifests contain access change history. Treat as sensitive data.
-4. **Network Security**: All API calls use HTTPS. Ensure your network doesn't intercept/modify traffic.
+- Requires admin-level Okta API access
+- No automated testing (yet)
+- Limited error recovery in some edge cases
+- Logs may contain user IDs and group names
 
-## Responsible Disclosure
+## License
 
-We follow responsible disclosure practices:
-- Security issues are fixed privately before public disclosure
-- Credit given to reporters (unless they prefer anonymity)
-- CVEs assigned for significant vulnerabilities
+MIT License - see LICENSE file. No warranty, express or implied.
