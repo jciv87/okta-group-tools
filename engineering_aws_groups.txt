@@ -1,0 +1,8 @@
+aws-wiw-readwrite-app-acceptance
+aws-wiw-readwrite-app-development
+aws-wiw-readonly-app-production
+aws-wiw-readwrite-app-staging
+aws-wiw-readwrite-data-acceptance
+aws-wiw-readwrite-data-development
+aws-wiw-readonly-data-production
+aws-wiw-readwrite-data-staging

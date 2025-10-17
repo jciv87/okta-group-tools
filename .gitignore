@@ -1,0 +1,24 @@
+# Environment and secrets
+.env
+*.pem
+*.key
+
+# Dependencies
+node_modules/
+
+# Logs
+logs/
+*.log
+
+# Runtime artifacts
+backups/
+manifests/
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

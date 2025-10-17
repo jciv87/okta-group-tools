@@ -1,0 +1,24 @@
+{
+  "name": "okta-membership-wizard",
+  "version": "6.0.0",
+  "description": "A CLI tool for managing Okta group rules and user memberships.",
+  "main": "okta_membership_wizard.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node okta_membership_wizard.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "author": "Okta Automation Team",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.11.0",
+    "chalk": "^4.1.2",
+    "dotenv": "^16.6.1",
+    "figlet": "^1.8.2",
+    "inquirer": "^8.2.7",
+    "ora": "^5.4.1",
+    "winston": "^3.17.0"
+  }
+}

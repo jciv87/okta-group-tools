@@ -1,0 +1,15 @@
+aws-wiw-readwrite-3p-acceptance
+aws-wiw-readwrite-3p-development
+aws-wiw-readwrite-3p-production
+aws-wiw-readwrite-3p-staging
+aws-wiw-readwrite-app-acceptance
+aws-wiw-readwrite-app-development
+aws-wiw-readwrite-app-production
+aws-wiw-readwrite-app-staging
+aws-wiw-readwrite-data-acceptance
+aws-wiw-readwrite-data-development
+aws-wiw-readwrite-data-production
+aws-wiw-readwrite-data-staging
+aws-wiw-spc-securityaudit-audit
+aws-wiw-spc-securityaudit-log-archive
+aws-wiw-spc-securityaudit-passport
