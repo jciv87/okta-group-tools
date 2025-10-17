@@ -29,8 +29,8 @@ The Okta GUI is fine for one-off changes. This tool exists for everything else:
 - This tool: Grant access → generates manifest → revoke using manifest when done
 
 **6. Profile Updates Are Repetitive**
-- GUI: Update custom attribute for 50 users = 50 manual edits
-- This tool: Paste user list, set attribute once, done
+- GUI: Update department for 50 users = 50 manual edits
+- This tool: Query available attributes, paste user list, set value once, done
 
 ## What It Does
 
@@ -79,17 +79,20 @@ Restores a user to their exact previous state using a manifest file - the "undo 
 - Fixing mistakes from incorrect access grants
 
 ### 4. Bulk Profile Updates
-Updates custom profile attributes for multiple users at once - eliminates repetitive GUI clicking.
+Updates profile attributes for multiple users at once - eliminates repetitive GUI clicking.
 
 **What it handles:**
-- Set any custom profile attribute (boolean, string, number)
+- Queries Okta schema to show available attributes (standard and custom)
+- Categorizes attributes for easy selection
+- Set any profile attribute (boolean, string, number)
 - Process multiple users in one operation
 - Detailed success/failure reporting
 - Confirmation with full impact summary
 
 **Use cases:**
+- Bulk updating department assignments
 - Marking users as contractors (`contractor: true`)
-- Setting department codes for bulk transfers
+- Setting manager relationships across teams
 - Updating custom flags for access control logic
 
 ## How It Works
@@ -274,7 +277,8 @@ This tool manages production access control. Multiple safety mechanisms are buil
 ├── utils/                        # Shared utilities
 ├── logs/                         # Operation logs (gitignored)
 ├── backups/                      # Rule backups (gitignored)
-└── manifests/                    # Access manifests (gitignored)
+├── manifests/                    # Access manifests (gitignored)
+└── docs/                         # UX analysis and design docs
 ```
 
 ## License
