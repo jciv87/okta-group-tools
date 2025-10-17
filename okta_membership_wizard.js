@@ -3,17 +3,19 @@
 /**
  * Okta Membership Wizard
  * ======================
- * An interactive CLI tool for managing Okta memberships, supporting:
- * 1. Dynamic group rule assignments (including re-creation of immutable rules).
- * 2. Direct user-to-group assignments for temporary access.
- * 3. Manifest-based access revocation to safely reset user permissions.
+ * Part of the Okta Group Tools suite - CLI automation for access management.
+ * 
+ * This interactive tool supports:
+ * 1. Dynamic group rule assignments (including re-creation of immutable rules)
+ * 2. Direct user-to-group assignments for temporary access
+ * 3. Manifest-based access revocation to safely reset user permissions
  *
- * This tool is the result of a collaborative design process between an
- * Architect (Alex Chen), an SRE (Maria Rodriguez), and a QA Engineer (David Kim),
- * prioritizing intelligent design, operational safety, and functional completeness.
+ * Companion tools:
+ * - bulk_update_user_profile.sh: Bulk profile attribute updates
+ * - bulk_load.js: Bulk group operations
  *
  * Author: Created for Okta administrators
- * Version: 7.0.3
+ * Version: 7.0.4
  * License: MIT
  */
 

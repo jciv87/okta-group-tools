@@ -28,6 +28,10 @@ The Okta GUI is fine for one-off changes. This tool exists for everything else:
 - GUI: Remember to remove that contractor's access in 2 weeks
 - This tool: Grant access → generates manifest → revoke using manifest when done
 
+**6. Profile Updates Are Repetitive**
+- GUI: Update custom attribute for 50 users = 50 manual edits
+- This tool: Paste user list, set attribute once, done
+
 ## What It Does
 
 Four tools for different access patterns:
@@ -63,11 +67,15 @@ OKTA_API_TOKEN=your-api-token
 **Interactive Wizard:**
 ```bash
 node okta_membership_wizard.js
+# or
+npm run wizard
 ```
 
 **Bulk Profile Updates:**
 ```bash
 ./bulk_update_user_profile.sh
+# or
+npm run profile-update
 ```
 
 ### Bulk Loading Groups from File
@@ -85,14 +93,15 @@ See `groups.txt.example` for reference. Group names must match exactly as they a
 ## Project Structure
 
 ```
-├── okta_membership_wizard.js  # Main interactive tool
-├── bulk_load.js               # Bulk operations
-├── diagnose_okta.js           # Diagnostics
-├── services/                  # API service layers
-├── utils/                     # Shared utilities
-├── logs/                      # Operation logs (gitignored)
-├── backups/                   # Rule backups (gitignored)
-└── manifests/                 # Access manifests (gitignored)
+├── okta_membership_wizard.js     # Main interactive tool
+├── bulk_update_user_profile.sh   # Bulk profile attribute updates
+├── bulk_load.js                  # Bulk group operations
+├── diagnose_okta.js              # Diagnostics
+├── services/                     # API service layers
+├── utils/                        # Shared utilities
+├── logs/                         # Operation logs (gitignored)
+├── backups/                      # Rule backups (gitignored)
+└── manifests/                    # Access manifests (gitignored)
 ```
 
 ## License

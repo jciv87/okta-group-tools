@@ -1,11 +1,13 @@
 {
-  "name": "okta-membership-wizard",
-  "version": "6.0.0",
-  "description": "A CLI tool for managing Okta group rules and user memberships.",
+  "name": "okta-group-tools",
+  "version": "7.0.0",
+  "description": "CLI automation for Okta access management - group rules, user memberships, and bulk profile updates",
   "main": "okta_membership_wizard.js",
   "type": "commonjs",
   "scripts": {
-    "start": "node okta_membership_wizard.js"
+    "start": "node okta_membership_wizard.js",
+    "wizard": "node okta_membership_wizard.js",
+    "profile-update": "./bulk_update_user_profile.sh"
   },
   "engines": {
     "node": ">=18"
