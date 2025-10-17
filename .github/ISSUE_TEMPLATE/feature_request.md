@@ -1,30 +1,23 @@
 ---
 name: Feature Request
-about: Suggest a new feature or enhancement
+about: Suggest an improvement
 title: '[FEATURE] '
 labels: enhancement
-assignees: ''
 ---
 
-## Problem Statement
-What problem does this feature solve? What pain point does it address?
+## What problem would this solve?
+Describe the pain point.
 
-## Proposed Solution
-How would you like this to work? Describe the ideal user experience.
+## How would you like it to work?
+Describe the ideal behavior.
 
-## Alternatives Considered
-What workarounds exist today? Why aren't they sufficient?
-
-## Use Case
-Describe a real-world scenario where this would be useful.
-
-## Alignment with Tool Philosophy
-How does this fit with the tool's focus on:
+## Why does this fit the tool?
+This tool focuses on:
+- Bulk operations the GUI makes painful
 - Safety (confirmations, backups, rollback)
 - Auditability (logs, manifests)
-- Bulk operations (scale, efficiency)
 
-## Additional Context
-- Would this work for most Okta admins or is it specific to your org?
-- Any Okta API limitations to consider?
-- Screenshots, mockups, or examples?
+How does your idea fit?
+
+## Anything else?
+Context, examples, screenshots, etc.

@@ -1,38 +1,31 @@
 ---
 name: Bug Report
-about: Report a bug or unexpected behavior
+about: Something's broken
 title: '[BUG] '
 labels: bug
-assignees: ''
 ---
 
-## Description
-A clear description of what the bug is.
+## What happened?
+Describe the bug.
 
 ## Environment
-- **OS**: (e.g., macOS 14.0, Ubuntu 22.04, Windows 11)
+- **OS**: 
 - **Node Version**: (run `node --version`)
-- **Tool Version**: (check `package.json` or git commit)
-- **Okta Org Type**: (Production/Preview/Developer - no sensitive details)
+- **Did preflight pass?**: (`npm run preflight`)
 
 ## Steps to Reproduce
-1. Run command: `...`
-2. Select option: `...`
-3. Enter value: `...`
-4. See error
+1. 
+2. 
+3. 
 
-## Expected Behavior
-What you expected to happen.
+## Expected vs Actual
+- **Expected**: 
+- **Actual**: 
 
-## Actual Behavior
-What actually happened.
-
-## Logs/Output
+## Logs (redact sensitive info)
 ```
-Paste relevant logs here (redact sensitive info like domain, tokens, user emails)
+paste logs here
 ```
 
-## Additional Context
-- Did preflight check pass? (`npm run preflight`)
-- Any recent changes to your Okta org?
-- Does this happen consistently or intermittently?
+## Notes
+Anything else that might help?
