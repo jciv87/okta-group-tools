@@ -3,6 +3,11 @@
 *.pem
 *.key
 
+# Company-specific group lists
+*_groups.txt
+*_aws_groups.txt
+revops.txt
+
 # Dependencies
 node_modules/
 
