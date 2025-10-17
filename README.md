@@ -54,6 +54,13 @@ cp .env.example .env
 # Edit .env with your Okta credentials
 ```
 
+**Verify your setup:**
+```bash
+npm run preflight
+```
+
+This checks Node version, dependencies, configuration, and tests your Okta connection.
+
 ## Configuration
 
 Create a `.env` file:
@@ -96,6 +103,7 @@ See `groups.txt.example` for reference. Group names must match exactly as they a
 ├── okta_membership_wizard.js     # Main interactive tool
 ├── bulk_update_user_profile.sh   # Bulk profile attribute updates
 ├── bulk_load.js                  # Bulk group operations
+├── preflight.js                  # Setup validation
 ├── diagnose_okta.js              # Diagnostics
 ├── services/                     # API service layers
 ├── utils/                        # Shared utilities

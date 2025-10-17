@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node okta_membership_wizard.js",
     "wizard": "node okta_membership_wizard.js",
-    "profile-update": "./bulk_update_user_profile.sh"
+    "profile-update": "./bulk_update_user_profile.sh",
+    "preflight": "node preflight.js"
   },
   "engines": {
     "node": ">=18"
