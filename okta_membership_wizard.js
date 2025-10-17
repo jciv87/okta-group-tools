@@ -209,7 +209,7 @@ async function getGroupNamesByIds(groupIds) {
 
 async function runUserWorkflow() {
     try {
-        showSectionHeader("Select User", 2);
+        showSectionHeader("Select User", 3);
         const { userInput } = await inquirer.prompt([{
             type: 'input', name: 'userInput', message: "Enter the user's login or ID:",
             validate: i => i ? true : 'Input cannot be empty.'
@@ -241,7 +241,7 @@ async function runUserWorkflow() {
         stopSpinner('User found.');
         console.log(chalk.green(`Operating on user: ${user.profile.firstName} ${user.profile.lastName} (${user.id})`));
 
-        showSectionHeader("Review Current Memberships", 3);
+        showSectionHeader("Review Current Memberships", 4);
         showSpinner("Fetching user's current groups...");
         const groupsResponse = await makeApiCall('get', `https://${config.connection.domain}/api/v1/users/${user.id}/groups`);
         const currentGroups = groupsResponse.data;
@@ -256,7 +256,7 @@ async function runUserWorkflow() {
 
         const currentGroupIds = currentGroups.map(g => g.id);
         
-        showSectionHeader("Modify Group Assignments", 4);
+        showSectionHeader("Modify Group Assignments", 5);
         const groupsToRemove = await selectGroupsToRemove(currentGroups);
         const groupsToAdd = await selectGroupsToAdd(currentGroupIds);
 
@@ -265,7 +265,7 @@ async function runUserWorkflow() {
             return;
         }
 
-        showSectionHeader("Review and Confirm Changes", 5);
+        showSectionHeader("Review and Confirm Changes", 6);
         const groupNames = await getGroupNamesByIds([...groupsToAdd, ...groupsToRemove]);
         
         console.log(chalk.yellow.bold('\n⚠️  IMPACT SUMMARY'));
@@ -290,7 +290,7 @@ async function runUserWorkflow() {
             return;
         }
 
-        showSectionHeader("Executing Changes", 6);
+        showSectionHeader("Executing Changes", 7);
         for (const groupId of groupsToRemove) {
             showSpinner(`Removing user from group ${groupNames[groupId] || groupId}...`);
             await makeApiCall('delete', `https://${config.connection.domain}/api/v1/groups/${groupId}/users/${user.id}`);
@@ -319,23 +319,80 @@ async function runUserWorkflow() {
 
 async function runResetWorkflow() {
     try {
-        showSectionHeader("Reset User Access from Manifest", 2);
+        showSectionHeader("Reset User Access from Manifest", 3);
         
-        const { manifestPath } = await inquirer.prompt([{
-            type: 'input', name: 'manifestPath', message: 'Enter the path to the access manifest file:',
-            validate: p => {
-                if (!p) return 'Path cannot be empty.';
-                const resolvedPath = p.startsWith('~') ? path.join(os.homedir(), p.slice(1)) : p;
-                return fs.existsSync(resolvedPath) ? true : 'File not found. Please check the path.';
+        // Check for available manifests
+        const manifestDir = config.dirs.manifests;
+        let manifestFiles = [];
+        if (fs.existsSync(manifestDir)) {
+            manifestFiles = fs.readdirSync(manifestDir)
+                .filter(f => f.endsWith('.json'))
+                .map(f => {
+                    try {
+                        const content = JSON.parse(fs.readFileSync(path.join(manifestDir, f), 'utf8'));
+                        return {
+                            name: `${content.user.login} - ${new Date(content.generatedAt).toLocaleString()}`,
+                            value: path.join(manifestDir, f),
+                            short: f
+                        };
+                    } catch (e) {
+                        return null;
+                    }
+                })
+                .filter(Boolean)
+                .sort((a, b) => b.value.localeCompare(a.value)); // Most recent first
+        }
+
+        let manifestPath;
+        if (manifestFiles.length > 0) {
+            const { selection } = await inquirer.prompt([{
+                type: 'list',
+                name: 'selection',
+                message: 'Select a manifest to restore:',
+                choices: [
+                    ...manifestFiles,
+                    new inquirer.Separator(),
+                    { name: '📁 Enter path manually', value: 'manual' }
+                ],
+                pageSize: 10
+            }]);
+
+            if (selection === 'manual') {
+                const { manualPath } = await inquirer.prompt([{
+                    type: 'input',
+                    name: 'manualPath',
+                    message: 'Enter the path to the access manifest file:',
+                    validate: p => {
+                        if (!p) return 'Path cannot be empty.';
+                        const resolvedPath = p.startsWith('~') ? path.join(os.homedir(), p.slice(1)) : p;
+                        return fs.existsSync(resolvedPath) ? true : 'File not found. Please check the path.';
+                    }
+                }]);
+                manifestPath = manualPath;
+            } else {
+                manifestPath = selection;
             }
-        }]);
+        } else {
+            console.log(chalk.yellow('No manifests found in manifests/ directory.'));
+            const { manualPath } = await inquirer.prompt([{
+                type: 'input',
+                name: 'manualPath',
+                message: 'Enter the path to the access manifest file:',
+                validate: p => {
+                    if (!p) return 'Path cannot be empty.';
+                    const resolvedPath = p.startsWith('~') ? path.join(os.homedir(), p.slice(1)) : p;
+                    return fs.existsSync(resolvedPath) ? true : 'File not found. Please check the path.';
+                }
+            }]);
+            manifestPath = manualPath;
+        }
 
         const resolvedPath = manifestPath.startsWith('~') ? path.join(os.homedir(), manifestPath.slice(1)) : manifestPath;
         const manifest = JSON.parse(fs.readFileSync(resolvedPath, 'utf8'));
         const { user, actions, generatedAt } = manifest;
         const { added, removed } = actions;
 
-        showSectionHeader("Review Access Reset Plan", 3);
+        showSectionHeader("Review Access Reset Plan", 4);
         console.log(chalk.yellow.bold('⚠️  ACCESS RESET OPERATION'));
         console.log(chalk.yellow(`This will restore user ${chalk.bold(user.login)} to the state before ${new Date(generatedAt).toLocaleString()}`));
         console.log(chalk.gray('This reverses the changes made in that operation.\n'));
@@ -362,7 +419,7 @@ async function runResetWorkflow() {
             return;
         }
 
-        showSectionHeader("Executing Access Reset", 4);
+        showSectionHeader("Executing Access Reset", 5);
         
         for (const groupId of added) {
             showSpinner(`Removing user from group ${groupNames[groupId] || groupId}...`);
@@ -397,7 +454,7 @@ async function runResetWorkflow() {
 async function runRuleWorkflow() {
     let oldRuleId;
     try {
-        showSectionHeader('Select Group Rule', 2);
+        showSectionHeader('Select Group Rule', 3);
         const rulesUrl = `https://${config.connection.domain}/api/v1/groups/rules`;
         showSpinner('Fetching group rules from Okta...');
         const rulesResponse = await makeApiCall('get', rulesUrl);
@@ -412,7 +469,7 @@ async function runRuleWorkflow() {
         }]);
         oldRuleId = ruleId;
 
-        showSectionHeader('Review Current Configuration', 3);
+        showSectionHeader('Review Current Configuration', 4);
         showSpinner('Fetching group rule details...');
         const originalRuleResponse = await makeApiCall('get', `https://${config.connection.domain}/api/v1/groups/rules/${oldRuleId}`);
         const originalRule = originalRuleResponse.data;
@@ -430,12 +487,12 @@ async function runRuleWorkflow() {
 
         const currentGroupIds = originalRule.actions.assignUserToGroups.groupIds || [];
         
-        showSectionHeader('Modify Group Assignments', 4);
+        showSectionHeader('Modify Group Assignments', 5);
         const allGroups = await listGroups();
         const groupMap = new Map(allGroups.map(g => [g.id, g.profile]));
         const currentGroups = currentGroupIds.map(id => ({ id, profile: groupMap.get(id) || { name: `Group ${id}` } }));
 
-        const groupsToRemove = await selectGroupsToRemove(currentGroups);
+        const groupsToRemove = await selectGroupsToRemove(currentGroups, 'rule');
         const groupsToAdd = await selectGroupsToAdd(currentGroupIds);
 
         if (groupsToAdd.length === 0 && groupsToRemove.length === 0) {
@@ -468,7 +525,7 @@ async function runRuleWorkflow() {
         delete updatedRulePayload.lastUpdated;
         delete updatedRulePayload.allGroupsValid;
 
-        showSectionHeader('Executing Changes', 5);
+        showSectionHeader('Executing Changes', 6);
         
         try {
             showSpinner('Attempting direct update...');
@@ -512,7 +569,7 @@ async function runRecreateWorkflow(oldRule, newGroupIds) {
     const oldRuleId = oldRule.id;
     let newRule = null;
 
-    showSectionHeader('Re-create: Staging New Rule', '6a');
+    showSectionHeader('Re-create: Staging New Rule', '7a');
 
     const baseName = oldRule.name.split(' (Updated')[0];
     const currentDate = new Date().toISOString().split('T')[0];
@@ -546,7 +603,7 @@ async function runRecreateWorkflow(oldRule, newGroupIds) {
         return;
     }
 
-    showSectionHeader('Re-create: Performing Cutover', '6b');
+    showSectionHeader('Re-create: Performing Cutover', '7b');
     try {
         showSpinner('Deactivating old rule...');
         await makeApiCall('post', `https://${config.connection.domain}/api/v1/groups/rules/${oldRuleId}/lifecycle/deactivate`);
@@ -572,7 +629,7 @@ async function runRecreateWorkflow(oldRule, newGroupIds) {
         throw error;
     }
 
-    showSectionHeader('Re-create: Cleaning Up', '6c');
+    showSectionHeader('Re-create: Cleaning Up', '7c');
     const { confirmCleanup } = await inquirer.prompt([{
         type: 'confirm', name: 'confirmCleanup',
         message: 'Cutover successful. Proceed with cleanup (delete old rule, rename new one)?',
@@ -615,9 +672,10 @@ async function runRecreateWorkflow(oldRule, newGroupIds) {
 // WORKFLOW HELPERS
 // =====================================================================
 
-async function selectGroupsToRemove(currentGroups) {
+async function selectGroupsToRemove(currentGroups, context = 'user') {
     if (currentGroups.length === 0) return [];
-    console.log(chalk.yellow(`\nYou can now select groups to remove from the user.`));
+    const contextText = context === 'rule' ? 'this rule' : 'the user';
+    console.log(chalk.yellow(`\nYou can now select groups to remove from ${contextText}.`));
     const groupChoices = currentGroups.map(g => ({ name: `${g.profile.name} (${g.id})`, value: g.id }));
     const { groupIdsToRemove } = await inquirer.prompt([{
         type: 'checkbox', name: 'groupIdsToRemove',
