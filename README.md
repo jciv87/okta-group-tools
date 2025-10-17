@@ -36,10 +36,150 @@ The Okta GUI is fine for one-off changes. This tool exists for everything else:
 
 Four tools for different access patterns:
 
-**Group Rule Management** - Modify dynamic rules (even locked ones), bulk group assignments  
-**Direct User Access** - Grant/revoke temporary access with automatic manifest generation  
-**Access Reset** - Restore user to previous state using manifest (perfect for incidents/contractors)  
-**Bulk Profile Updates** - Update custom profile attributes for multiple users at once
+### 1. Group Rule Management
+Modifies Okta group rules that automatically assign users to groups based on conditions (e.g., department, location, role).
+
+**What it handles:**
+- Direct rule updates (when rules are mutable)
+- Automatic rule recreation (when rules are locked/immutable)
+- Bulk group assignments to rules
+- Safe cutover with automatic rollback on failure
+
+**Use cases:**
+- Adding AWS access groups to an engineering rule
+- Removing deprecated groups from contractor rules
+- Restructuring access patterns across departments
+
+### 2. Direct User Access
+Grants or revokes group memberships for individual users - perfect for temporary access or one-off changes.
+
+**What it handles:**
+- Add users to multiple groups at once
+- Remove users from multiple groups at once
+- Automatic manifest generation for every change
+- Interactive or file-based group selection
+
+**Use cases:**
+- Granting temporary elevated access for incidents
+- Onboarding contractors with specific group sets
+- Quick access grants that bypass rule conditions
+
+### 3. Access Reset
+Restores a user to their exact previous state using a manifest file - the "undo button" for access changes.
+
+**What it handles:**
+- Browse recent manifests by user and timestamp
+- Preview what will be added/removed
+- Reverse any previous access change operation
+- Perfect for cleaning up after incidents or contractor offboarding
+
+**Use cases:**
+- Removing temporary access after incident resolution
+- Offboarding contractors (revert to pre-onboarding state)
+- Fixing mistakes from incorrect access grants
+
+### 4. Bulk Profile Updates
+Updates custom profile attributes for multiple users at once - eliminates repetitive GUI clicking.
+
+**What it handles:**
+- Set any custom profile attribute (boolean, string, number)
+- Process multiple users in one operation
+- Detailed success/failure reporting
+- Confirmation with full impact summary
+
+**Use cases:**
+- Marking users as contractors (`contractor: true`)
+- Setting department codes for bulk transfers
+- Updating custom flags for access control logic
+
+## How It Works
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                  Okta Group Tools                       │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │
+│  │   Wizard     │  │   Profile    │  │  Bulk Load   │ │
+│  │ (Interactive)│  │   Updater    │  │   (Script)   │ │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘ │
+│         │                 │                  │         │
+│         └─────────────────┼──────────────────┘         │
+│                           │                            │
+│                  ┌────────▼────────┐                   │
+│                  │  Okta API Layer │                   │
+│                  │  (axios + auth) │                   │
+│                  └────────┬────────┘                   │
+│                           │                            │
+│         ┌─────────────────┼─────────────────┐         │
+│         │                 │                 │         │
+│    ┌────▼────┐      ┌────▼────┐      ┌────▼────┐    │
+│    │  Logs   │      │ Backups │      │Manifests│    │
+│    │(winston)│      │  (JSON) │      │ (JSON)  │    │
+│    └─────────┘      └─────────┘      └─────────┘    │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Safety Mechanisms
+
+**Before Execution:**
+1. **Preflight checks** - Validates Node version, dependencies, .env config, and Okta connectivity
+2. **Impact summaries** - Shows exactly what will change, how many users/groups affected
+3. **Explicit confirmation** - Requires user approval before any changes
+
+**During Execution:**
+4. **Automatic backups** - Rule modifications create timestamped JSON backups
+5. **Manifest generation** - User access changes generate rollback manifests
+6. **Progress tracking** - Spinners and status updates for long operations
+7. **Error handling** - Graceful failures with detailed error messages
+
+**After Execution:**
+8. **Structured logging** - All operations logged to `logs/okta-wizard.log` with timestamps
+9. **Backup retention** - Rule backups stored in `backups/` directory
+10. **Manifest storage** - Access manifests stored in `manifests/` directory
+
+### Immutable Rule Handling
+
+When Okta locks a rule (makes it immutable), the GUI shows an error. This tool handles it automatically:
+
+```
+1. Detect immutable rule (API returns error on update attempt)
+2. Offer to recreate the rule with changes
+3. Stage new rule (INACTIVE) with updated group assignments
+4. User reviews staged rule
+5. Cutover: Deactivate old → Activate new
+6. If cutover fails: Automatic rollback (reactivate old rule)
+7. Cleanup: Delete old rule, rename new rule
+```
+
+This multi-step process ensures zero downtime and safe rollback if anything goes wrong.
+
+### Manifest-Based Rollback
+
+Every user access change generates a manifest:
+
+```json
+{
+  "generatedAt": "2025-10-17T12:00:00.000Z",
+  "operator": "joe.costanzo",
+  "user": {
+    "id": "00u1234567890",
+    "login": "john.doe@company.com"
+  },
+  "actions": {
+    "added": ["00g111", "00g222"],
+    "removed": ["00g333"]
+  }
+}
+```
+
+The reset workflow reverses these actions:
+- Groups in `added` → removed from user
+- Groups in `removed` → added back to user
+
+This creates a perfect "undo" for any access change operation.
 
 ## Setup
 
