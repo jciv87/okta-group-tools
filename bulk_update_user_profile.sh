@@ -28,34 +28,50 @@ echo "⚠️  WARNING: This modifies user profile attributes in production"
 echo "   • Changes are immediate and affect user access/attributes"
 echo "   • Ensure you have the correct user list before proceeding"
 echo ""
-echo "This script updates custom profile attributes for multiple users."
+echo "This script updates profile attributes for multiple users."
 echo "You can provide user IDs or emails."
 echo ""
 
-# Fetch user schema to show available custom attributes
-echo "Fetching available custom profile attributes from Okta..."
+# Fetch user schema to show available attributes
+echo "Fetching available profile attributes from Okta..."
 SCHEMA_URL="https://${OKTA_DOMAIN}/api/v1/meta/schemas/user/default"
 SCHEMA_RESPONSE=$(curl -s -X GET "$SCHEMA_URL" \
     -H "Accept: application/json" \
     -H "Authorization: SSWS ${OKTA_API_TOKEN}")
 
-# Extract custom attributes (those not in base schema)
-CUSTOM_ATTRS=$(echo "$SCHEMA_RESPONSE" | grep -o '"[^"]*":' | grep -v '"id"\|"status"\|"created"\|"lastUpdated"\|"firstName"\|"lastName"\|"email"\|"login"\|"mobilePhone"\|"secondEmail"\|"profileUrl"\|"preferredLanguage"\|"userType"\|"organization"\|"title"\|"displayName"\|"nickName"\|"primaryPhone"\|"streetAddress"\|"city"\|"state"\|"zipCode"\|"countryCode"\|"postalAddress"\|"locale"\|"timezone"\|"employeeNumber"\|"costCenter"\|"division"\|"department"\|"managerId"\|"manager"' | tr -d '":' | sort -u)
+# Define standard Okta base attributes
+STANDARD_ATTRS="firstName|lastName|email|login|mobilePhone|secondEmail|profileUrl|preferredLanguage|userType|organization|title|displayName|nickName|primaryPhone|streetAddress|city|state|zipCode|countryCode|postalAddress|locale|timezone|employeeNumber|costCenter|division|department|managerId|manager"
 
-if [ -z "$CUSTOM_ATTRS" ]; then
-    echo ""
-    echo "No custom attributes found in your Okta user schema."
-    echo "You can add custom attributes in: Admin Console → Directory → Profile Editor → User (default)"
-    echo ""
-    read -p "Enter the custom attribute name manually: " ATTRIBUTE_NAME
+# Extract all attributes
+ALL_ATTRS=$(echo "$SCHEMA_RESPONSE" | grep -o '"[^"]*":' | grep -v '"id"\|"status"\|"created"\|"lastUpdated"' | tr -d '":' | sort -u)
+
+# Categorize attributes
+STANDARD_LIST=$(echo "$ALL_ATTRS" | grep -E "^($STANDARD_ATTRS)$")
+CUSTOM_LIST=$(echo "$ALL_ATTRS" | grep -vE "^($STANDARD_ATTRS)$")
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "STANDARD OKTA ATTRIBUTES:"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+if [ -n "$STANDARD_LIST" ]; then
+    echo "$STANDARD_LIST" | column
 else
-    echo ""
-    echo "Available custom attributes:"
-    echo "$CUSTOM_ATTRS" | nl
-    echo ""
-    read -p "Enter the attribute name from above (or type a custom one): " ATTRIBUTE_NAME
+    echo "(none found)"
 fi
 
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "CUSTOM ATTRIBUTES:"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+if [ -n "$CUSTOM_LIST" ]; then
+    echo "$CUSTOM_LIST" | column
+else
+    echo "(none found - add in: Admin Console → Directory → Profile Editor)"
+fi
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+echo ""
+read -p "Enter the attribute name to update: " ATTRIBUTE_NAME
 read -p "Enter the value (true/false for boolean, or text): " ATTRIBUTE_VALUE
 
 # Convert string "true"/"false" to JSON boolean
