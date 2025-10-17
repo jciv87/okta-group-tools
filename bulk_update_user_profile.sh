@@ -31,7 +31,31 @@ echo ""
 echo "This script updates custom profile attributes for multiple users."
 echo "You can provide user IDs or emails."
 echo ""
-read -p "Enter the profile attribute name (e.g., rip_employee): " ATTRIBUTE_NAME
+
+# Fetch user schema to show available custom attributes
+echo "Fetching available custom profile attributes from Okta..."
+SCHEMA_URL="https://${OKTA_DOMAIN}/api/v1/meta/schemas/user/default"
+SCHEMA_RESPONSE=$(curl -s -X GET "$SCHEMA_URL" \
+    -H "Accept: application/json" \
+    -H "Authorization: SSWS ${OKTA_API_TOKEN}")
+
+# Extract custom attributes (those not in base schema)
+CUSTOM_ATTRS=$(echo "$SCHEMA_RESPONSE" | grep -o '"[^"]*":' | grep -v '"id"\|"status"\|"created"\|"lastUpdated"\|"firstName"\|"lastName"\|"email"\|"login"\|"mobilePhone"\|"secondEmail"\|"profileUrl"\|"preferredLanguage"\|"userType"\|"organization"\|"title"\|"displayName"\|"nickName"\|"primaryPhone"\|"streetAddress"\|"city"\|"state"\|"zipCode"\|"countryCode"\|"postalAddress"\|"locale"\|"timezone"\|"employeeNumber"\|"costCenter"\|"division"\|"department"\|"managerId"\|"manager"' | tr -d '":' | sort -u)
+
+if [ -z "$CUSTOM_ATTRS" ]; then
+    echo ""
+    echo "No custom attributes found in your Okta user schema."
+    echo "You can add custom attributes in: Admin Console → Directory → Profile Editor → User (default)"
+    echo ""
+    read -p "Enter the custom attribute name manually: " ATTRIBUTE_NAME
+else
+    echo ""
+    echo "Available custom attributes:"
+    echo "$CUSTOM_ATTRS" | nl
+    echo ""
+    read -p "Enter the attribute name from above (or type a custom one): " ATTRIBUTE_NAME
+fi
+
 read -p "Enter the value (true/false for boolean, or text): " ATTRIBUTE_VALUE
 
 # Convert string "true"/"false" to JSON boolean
