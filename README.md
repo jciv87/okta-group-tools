@@ -326,6 +326,3 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
 └── docs/                         # UX analysis and design docs
 ```
 
-## License
-
-MIT
