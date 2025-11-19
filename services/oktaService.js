@@ -1,50 +1,79 @@
-const okta = require('@okta/okta-sdk-nodejs');
+const axios = require('axios');
 
-class OktaService {
-  constructor() {
-    // This constructor ensures that the necessary Okta environment variables are set before proceeding.
-    if (!process.env.OKTA_ORG_URL || !process.env.OKTA_API_TOKEN) {
-      throw new Error('Missing Okta environment variables (OKTA_ORG_URL, OKTA_API_TOKEN)');
+async function makeApiCall(method, url, token, data = null) {
+    const headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `SSWS ${token}`
+    };
+    try {
+        return await axios({ method, url, headers, data });
+    } catch (error) {
+        if (error.response) {
+            const { status, data: responseData, headers: responseHeaders } = error.response;
+            if (status === 401) throw new Error('Authentication failed. Check your API token.');
+            if (status === 403) throw new Error('You don\'t have permission for this action.');
+            if (status === 404) throw new Error('The requested resource was not found.');
+            if (status === 429) {
+                const retryAfter = parseInt(responseHeaders['retry-after'] || '10', 10);
+                // In a service, we shouldn't log directly to console.
+                // For now, we'll keep it for visibility during refactor.
+                console.log(`\nRate limited. Retrying in ${retryAfter} seconds...`);
+                await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+                return makeApiCall(method, url, token, data);
+            }
+            const summary = responseData?.errorSummary || JSON.stringify(responseData);
+            const errorCode = responseData?.errorCode;
+            const customError = new Error(`Okta API error: ${status} - ${summary}`);
+            customError.oktaErrorCode = errorCode;
+            throw customError;
+        } else if (error.request) {
+            throw new Error('No response from Okta. Check network connection and domain.');
+        } else {
+            throw error;
+        }
     }
-    this.client = new okta.Client({
-      orgUrl: process.env.OKTA_ORG_URL,
-      token: process.env.OKTA_API_TOKEN,
-    });
-  }
-
-  /**
-   * Finds an Okta group by its exact name using the correct SDK v7 method.
-   * @param {string} name The name of the group to find.
-   * @returns {Promise<okta.Group|null>} The group object if found, otherwise null.
-   */
-  async findExistingGroup(name) {
-    // The diagnostic script confirmed we are using SDK v7+, which returns a Collection object.
-    // The .each() method is the correct way to iterate this collection.
-    let foundGroup = null;
-    
-    const groupsCollection = await this.client.groupApi.listGroups({ q: name });
-    
-    await groupsCollection.each(group => {
-      // The `q` parameter can return partial matches, so this check ensures an exact name match.
-      if (group.profile.name === name) {
-        foundGroup = group;
-      }
-    });
-
-    return foundGroup;
-  }
-
-  /**
-   * Creates a new group in Okta.
-   * @param {string} name The name for the new group.
-   * @param {string} description The description for the new group.
-   * @returns {Promise<okta.Group>} The newly created group object.
-   */
-  async createGroup(name, description) {
-    return this.client.groupApi.createGroup({
-      profile: { name, description },
-    });
-  }
 }
 
-module.exports = OktaService;
+async function listAll(url, token) {
+    let results = [];
+    let nextUrl = url;
+    while(nextUrl) {
+        const response = await makeApiCall('get', nextUrl, token);
+        results = results.concat(response.data);
+        const linkHeader = response.headers.link;
+        const nextLink = linkHeader?.split(',').find(link => link.includes('rel="next"'));
+        nextUrl = nextLink ? nextLink.match(/<(.+)>/)[1] : null;
+    }
+    return results;
+}
+
+async function listGroups(domain, token, showSpinner, stopSpinner, logger) {
+    const url = `https://${domain}/api/v1/groups?limit=200`;
+    showSpinner('Fetching all groups from Okta...');
+    try {
+        const allGroups = await listAll(url, token);
+        stopSpinner();
+        if(logger) logger.info('Retrieved groups', { action: 'list_groups', count: allGroups.length });
+        return allGroups;
+    } catch (error) {
+        stopSpinner('Failed to retrieve groups.', true);
+        throw error;
+    }
+}
+
+async function getGroupNamesByIds(groupIds, domain, token, showSpinner, stopSpinner, logger) {
+    if (groupIds.length === 0) return {};
+    const allGroups = await listGroups(domain, token, showSpinner, stopSpinner, logger);
+    const groupMap = new Map(allGroups.map(g => [g.id, g.profile.name]));
+    const names = {};
+    groupIds.forEach(id => { names[id] = groupMap.get(id) || id; });
+    return names;
+}
+
+module.exports = {
+    makeApiCall,
+    listAll,
+    listGroups,
+    getGroupNamesByIds
+};

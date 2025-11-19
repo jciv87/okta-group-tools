@@ -24,7 +24,6 @@
 // =====================================================================
 
 require('dotenv').config();
-const axios = require('axios');
 const inquirer = require('inquirer');
 const chalk = require('chalk');
 const ora = require('ora');
@@ -33,6 +32,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const winston = require('winston');
+const oktaService = require('./services/oktaService');
 
 // =====================================================================
 // GLOBAL CONFIGURATION & STATE
@@ -130,78 +130,10 @@ function backupGroupRule(rule, ruleId) {
     }
 }
 
-// =====================================================================
-// API HELPERS
-// =====================================================================
-
-async function makeApiCall(method, url, data = null) {
-    const headers = {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Authorization': `SSWS ${config.connection.token}`
-    };
-    try {
-        return await axios({ method, url, headers, data });
-    } catch (error) {
-        if (error.response) {
-            const { status, data: responseData, headers: responseHeaders } = error.response;
-            if (status === 401) throw new Error('Authentication failed. Check your API token.');
-            if (status === 403) throw new Error('You don\'t have permission for this action.');
-            if (status === 404) throw new Error('The requested resource was not found.');
-            if (status === 429) {
-                const retryAfter = parseInt(responseHeaders['retry-after'] || '10', 10);
-                console.log(chalk.yellow(`\nRate limited. Retrying in ${retryAfter} seconds...`));
-                await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
-                return makeApiCall(method, url, data);
-            }
-            const summary = responseData?.errorSummary || JSON.stringify(responseData);
-            const errorCode = responseData?.errorCode;
-            const customError = new Error(`Okta API error: ${status} - ${summary}`);
-            customError.oktaErrorCode = errorCode;
-            throw customError;
-        } else if (error.request) {
-            throw new Error('No response from Okta. Check network connection and domain.');
-        } else {
-            throw error;
-        }
-    }
-}
-
-async function listAll(url) {
-    let results = [];
-    let nextUrl = url;
-    while(nextUrl) {
-        const response = await makeApiCall('get', nextUrl);
-        results = results.concat(response.data);
-        const linkHeader = response.headers.link;
-        const nextLink = linkHeader?.split(',').find(link => link.includes('rel="next"'));
-        nextUrl = nextLink ? nextLink.match(/<(.+)>/)[1] : null;
-    }
-    return results;
-}
-
-async function listGroups() {
-    const url = `https://${config.connection.domain}/api/v1/groups?limit=200`;
-    showSpinner('Fetching all groups from Okta...');
-    try {
-        const allGroups = await listAll(url);
-        stopSpinner();
-        logger.info('Retrieved groups', { action: 'list_groups', count: allGroups.length });
-        return allGroups;
-    } catch (error) {
-        stopSpinner('Failed to retrieve groups.', true);
-        throw error;
-    }
-}
-
-async function getGroupNamesByIds(groupIds) {
-    if (groupIds.length === 0) return {};
-    const allGroups = await listGroups();
-    const groupMap = new Map(allGroups.map(g => [g.id, g.profile.name]));
-    const names = {};
-    groupIds.forEach(id => { names[id] = groupMap.get(id) || id; });
-    return names;
-}
+// Pass the necessary config to the service functions
+const makeApiCall = (method, url, data) => oktaService.makeApiCall(method, url, config.connection.token, data);
+const listGroups = () => oktaService.listGroups(config.connection.domain, config.connection.token, showSpinner, stopSpinner, logger);
+const getGroupNamesByIds = (groupIds) => oktaService.getGroupNamesByIds(groupIds, config.connection.domain, config.connection.token, showSpinner, stopSpinner, logger);
 
 // =====================================================================
 // WORKFLOW: USER MEMBERSHIPS
@@ -806,25 +738,35 @@ async function main() {
             config.connection.token = answers.OKTA_API_TOKEN;
         }
 
-        if (!config.connection.domain) {
-            throw new Error('OKTA_DOMAIN is not defined. Please add it to your .env file or enter it when prompted.');
-        }
-        if (!config.connection.token) {
-            throw new Error('OKTA_API_TOKEN is not defined. Please add it to your .env file or enter it when prompted.');
-        }
-        
         // 3. Select Workflow
         showSectionHeader('Select Workflow', 2);
-        const { workflow } = await inquirer.prompt([{
-            type: 'list',
-            name: 'workflow',
-            message: 'What would you like to manage?',
-            choices: [
-                { name: 'Group Rule Assignments', value: 'rule' },
-                { name: 'Direct User Group Assignments (Grant Access)', value: 'user' },
-                { name: 'Reset User Access from a Manifest (Revoke Access)', value: 'reset' }
-            ]
-        }]);
+        let workflow;
+        try {
+            const answers = await inquirer.prompt([{
+                type: 'list',
+                name: 'workflow',
+                message: 'What would you like to manage?',
+                choices: [
+                    { name: 'Group Rule Assignments', value: 'rule' },
+                    { name: 'Direct User Group Assignments (Grant Access)', value: 'user' },
+                    { name: 'Reset User Access from a Manifest (Revoke Access)', value: 'reset' },
+                    { name: 'List Users in a Group', value: 'list' }
+                ]
+            }]);
+            workflow = answers.workflow;
+        } catch (error) {
+            console.error(chalk.red.bold('\nError during workflow selection:'), error.message);
+            process.exit(1);
+        }
+
+        if (workflow !== 'list') {
+            if (!config.connection.domain) {
+                throw new Error('OKTA_DOMAIN is not defined. Please add it to your .env file or enter it when prompted.');
+            }
+            if (!config.connection.token) {
+                throw new Error('OKTA_API_TOKEN is not defined. Please add it to your .env file or enter it when prompted.');
+            }
+        }
 
         // 4. Execute selected workflow
         if (workflow === 'rule') {
@@ -833,6 +775,9 @@ async function main() {
             await runUserWorkflow();
         } else if (workflow === 'reset') {
             await runResetWorkflow();
+        } else if (workflow === 'list') {
+            const { main: listGroupUsersMain } = require('./list_group_users.js');
+            await listGroupUsersMain();
         }
 
     } catch (error) {

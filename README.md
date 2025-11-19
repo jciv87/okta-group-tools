@@ -188,18 +188,19 @@ This creates a perfect "undo" for any access change operation.
 
 ## Setup
 
+Run the setup script:
 ```bash
-./group_tools_setup.sh
+./setup.sh
 ```
 
-Or manually:
-```bash
-npm install
-cp .env.example .env
-# Edit .env with your Okta credentials
-```
+This will:
+1.  Install the required `npm` dependencies.
+2.  Create a `.env` file from the `.env.example` template.
+3.  Run pre-flight checks to ensure your environment is configured correctly.
 
-**Verify your setup:**
+After the script completes, you **must** edit the newly created `.env` file to add your Okta domain and API token.
+
+**Verify your setup at any time:**
 ```bash
 npm run preflight
 ```
