@@ -536,7 +536,8 @@ async function runRecreateWorkflow(oldRule, newGroupIds, groupsToAdd = [], group
     const baseName = oldRule.name.split(' (Updated')[0].replace(/^\d+\s*-\s*/, '').trim();
     const currentDate = new Date().toISOString().split('T')[0];
     const finalName = `${baseName} (Updated ${currentDate})`;
-    const tempName = `STAGING - ${finalName}`;
+    // Okta rule names max 50 chars - use short prefix
+    const tempName = `TMP_${baseName.substring(0, 30)}_${Date.now()}`;
 
     const newRulePayload = {
         name: tempName,
