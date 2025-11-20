@@ -71,9 +71,35 @@ async function getGroupNamesByIds(groupIds, domain, token, showSpinner, stopSpin
     return names;
 }
 
+// Class-based service for bulk operations
+class OktaService {
+    constructor() {
+        if (!process.env.OKTA_DOMAIN || !process.env.OKTA_API_TOKEN) {
+            throw new Error('Missing Okta environment variables (OKTA_DOMAIN, OKTA_API_TOKEN)');
+        }
+        this.domain = process.env.OKTA_DOMAIN;
+        this.token = process.env.OKTA_API_TOKEN;
+    }
+
+    async findExistingGroup(name) {
+        const url = `https://${this.domain}/api/v1/groups?q=${encodeURIComponent(name)}`;
+        const response = await makeApiCall('get', url, this.token);
+        // q parameter can return partial matches, ensure exact match
+        return response.data.find(g => g.profile.name === name) || null;
+    }
+
+    async createGroup(name, description) {
+        const url = `https://${this.domain}/api/v1/groups`;
+        const payload = { profile: { name, description } };
+        const response = await makeApiCall('post', url, this.token, payload);
+        return response.data;
+    }
+}
+
 module.exports = {
     makeApiCall,
     listAll,
     listGroups,
-    getGroupNamesByIds
+    getGroupNamesByIds,
+    OktaService
 };

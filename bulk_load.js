@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 const { parseArguments } = require('./utils/cli');
-const OktaService = require('./services/oktaService');
+const { OktaService } = require('./services/oktaService');
 const JiraService = require('./services/jiraService');
 
 // Helper function to read group names from a file.
@@ -45,7 +45,15 @@ async function main() {
   try {
     const argv = parseArguments();
     const oktaService = new OktaService();
-    const jiraService = new JiraService();
+
+    let jiraService = null;
+    if (argv.jira) {
+      try {
+        jiraService = new JiraService();
+      } catch (error) {
+        console.error('[WARN] Jira ticket specified but Jira is not configured. Skipping Jira integration.');
+      }
+    }
 
     const groupNames = getGroupNamesFromFile(argv.file);
     const stats = { created: 0, skipped: 0, failed: 0, toCreate: [], createdDetails: [] };
@@ -97,10 +105,13 @@ async function main() {
       }
 
       const summary = `h2. Bulk Provisioner Summary\n*Created:* ${stats.created}\n*Skipped (Existing):* ${stats.skipped}\n*Failed:* ${stats.failed}`;
-      await jiraService.postComment(argv.jira, summary);
-      
-      if (stats.failed === 0 && argv['jira-transition']) {
-          await jiraService.transitionTicket(argv.jira, argv['jira-transition']);
+
+      if (argv.jira && jiraService) {
+        await jiraService.postComment(argv.jira, summary);
+
+        if (stats.failed === 0 && argv['jira-transition']) {
+            await jiraService.transitionTicket(argv.jira, argv['jira-transition']);
+        }
       }
 
     } else {

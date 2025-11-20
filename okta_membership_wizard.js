@@ -33,6 +33,7 @@ const path = require('path');
 const os = require('os');
 const winston = require('winston');
 const oktaService = require('./services/oktaService');
+const { promptForJiraAction, buildUserAccessOperation, buildRuleUpdateOperation } = require('./utils/jiraWorkflow');
 
 // =====================================================================
 // GLOBAL CONFIGURATION & STATE
@@ -103,7 +104,7 @@ function generateRevocationManifest(user, added, removed) {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const manifestFile = `manifest-${user.profile.login}-${timestamp}.json`;
     const manifestPath = path.join(config.dirs.manifests, manifestFile);
-    
+
     const manifest = {
         generatedAt: new Date().toISOString(),
         operator: os.userInfo().username,
@@ -114,6 +115,7 @@ function generateRevocationManifest(user, added, removed) {
     fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
     logger.info('Generated revocation manifest', { user: user.id, manifestFile });
     console.log(chalk.cyan(`\nAccess change manifest saved to: ${manifestPath}`));
+    return manifestPath;
 }
 
 function backupGroupRule(rule, ruleId) {
@@ -234,9 +236,15 @@ async function runUserWorkflow() {
             stopSpinner(`Added user to group ${groupNames[groupId] || groupId}.`);
         }
         
-        generateRevocationManifest(user, groupsToAdd, groupsToRemove);
+        const manifestPath = generateRevocationManifest(user, groupsToAdd, groupsToRemove);
 
         console.log(chalk.green.bold('\n✓ User group memberships updated successfully!'));
+
+        // Jira Integration
+        const groupsAddedDetails = groupsToAdd.map(gId => ({ name: groupNames[gId] || gId, id: gId }));
+        const groupsRemovedDetails = groupsToRemove.map(gId => ({ name: groupNames[gId] || gId, id: gId }));
+        const operation = buildUserAccessOperation(user, groupsAddedDetails, groupsRemovedDetails, manifestPath);
+        await promptForJiraAction(operation);
 
     } catch (error) {
         stopSpinner('User workflow failed.', true);
@@ -369,8 +377,19 @@ async function runResetWorkflow() {
             manifestFile: path.basename(manifestPath),
             operator: os.userInfo().username
         });
-        
+
         console.log(chalk.green.bold('\n✓ User access has been successfully reset to its previous state!'));
+
+        // Jira Integration for rollback tracking
+        const groupsAddedDetails = removed.map(gId => ({ name: groupNames[gId] || gId, id: gId }));
+        const groupsRemovedDetails = added.map(gId => ({ name: groupNames[gId] || gId, id: gId }));
+        const resetOperation = buildUserAccessOperation(
+            { profile: { login: user.login }, id: user.id },
+            groupsAddedDetails,
+            groupsRemovedDetails,
+            null
+        );
+        await promptForJiraAction(resetOperation);
 
     } catch (error) {
         stopSpinner('Reset workflow failed.', true);
@@ -463,12 +482,23 @@ async function runRuleWorkflow() {
             showSpinner('Attempting direct update...');
             await makeApiCall('put', `https://${config.connection.domain}/api/v1/groups/rules/${oldRuleId}`, updatedRulePayload);
             stopSpinner('Direct update successful!');
-            
+
             if (originalRule.status === 'INACTIVE') {
                 showSpinner('Activating rule...');
                 await makeApiCall('post', `https://${config.connection.domain}/api/v1/groups/rules/${oldRuleId}/lifecycle/activate`);
                 stopSpinner('Rule activated.');
             }
+
+            // Jira Integration for rule update
+            const groupsAddedNames = await getGroupNamesByIds(groupsToAdd);
+            const groupsRemovedNames = await getGroupNamesByIds(groupsToRemove);
+            const ruleOperation = buildRuleUpdateOperation(
+                originalRule,
+                groupsToAdd.map(id => groupsAddedNames[id] || id),
+                groupsToRemove.map(id => groupsRemovedNames[id] || id)
+            );
+            await promptForJiraAction(ruleOperation);
+
         } catch (error) {
             if (error.oktaErrorCode === 'E0000001') {
                 stopSpinner('Direct update failed. Rule appears to be immutable.', true);
@@ -485,7 +515,7 @@ async function runRuleWorkflow() {
                     return;
                 }
 
-                await runRecreateWorkflow(originalRule, finalGroupIds);
+                await runRecreateWorkflow(originalRule, finalGroupIds, groupsToAdd, groupsToRemove);
             } else {
                 throw error;
             }
@@ -497,7 +527,7 @@ async function runRuleWorkflow() {
     }
 }
 
-async function runRecreateWorkflow(oldRule, newGroupIds) {
+async function runRecreateWorkflow(oldRule, newGroupIds, groupsToAdd = [], groupsToRemove = []) {
     const oldRuleId = oldRule.id;
     let newRule = null;
 
@@ -606,6 +636,16 @@ async function runRecreateWorkflow(oldRule, newGroupIds) {
     }
 
     console.log(chalk.green.bold('\n✓ Re-creation process completed successfully!'));
+
+    // Jira Integration for rule recreation
+    const groupsAddedNames = await getGroupNamesByIds(groupsToAdd);
+    const groupsRemovedNames = await getGroupNamesByIds(groupsToRemove);
+    const ruleOperation = buildRuleUpdateOperation(
+        oldRule,
+        groupsToAdd.map(id => groupsAddedNames[id] || id),
+        groupsToRemove.map(id => groupsRemovedNames[id] || id)
+    );
+    await promptForJiraAction(ruleOperation);
 }
 
 // =====================================================================

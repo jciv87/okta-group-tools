@@ -13,7 +13,7 @@ function parseArguments() {
     .option('jira', {
       describe: 'A pre-existing Jira ticket key to post updates to',
       type: 'string',
-      demandOption: true,
+      demandOption: false,
     })
     .option('output-file', {
       alias: 'o',
