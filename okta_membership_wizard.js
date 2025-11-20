@@ -533,10 +533,10 @@ async function runRecreateWorkflow(oldRule, newGroupIds, groupsToAdd = [], group
 
     showSectionHeader('Re-create: Staging New Rule', '7a');
 
-    const baseName = oldRule.name.split(' (Updated')[0];
+    const baseName = oldRule.name.split(' (Updated')[0].replace(/^\d+\s*-\s*/, '').trim();
     const currentDate = new Date().toISOString().split('T')[0];
     const finalName = `${baseName} (Updated ${currentDate})`;
-    const tempName = `[STAGING] ${finalName}`;
+    const tempName = `STAGING - ${finalName}`;
 
     const newRulePayload = {
         name: tempName,
